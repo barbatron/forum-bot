@@ -29,17 +29,28 @@
         "command": "/sample-command",
         "description": "Runs a sample command",
         "should_escape": false
+      },
+      {
+        "command": "/forum",
+        "description": "Manage topic gathering for forums",
+        "should_escape": false
       }
     ]
   },
   "oauth_config": {
     "scopes": {
-      "bot": ["channels:history", "chat:write", "commands"]
+      "bot": [
+        "channels:history",
+        "chat:write",
+        "commands",
+        "im:history",
+        "im:read"
+      ]
     }
   },
   "settings": {
     "event_subscriptions": {
-      "bot_events": ["app_home_opened", "message.channels"]
+      "bot_events": ["app_home_opened", "message.channels", "message.im"]
     },
     "interactivity": {
       "is_enabled": true
