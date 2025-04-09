@@ -1,4 +1,5 @@
 import re
+import datetime
 from logging import Logger
 
 from slack_bolt import Ack, Respond
@@ -27,12 +28,12 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
             
             # Start topic gathering
             end_time = store.start_gathering(duration)
-            respond(f"Topic gathering has started! I'll collect messages for {duration} minutes (until {end_time.strftime('%H:%M:%S')}). Users can DM me their topics.")
+            respond(f"Topic gathering has started! I'll collect topics for {duration} minutes (until {end_time.strftime('%H:%M:%S')}). Use `/forum suggest your topic here` to submit topics.")
             
             # Announce in the channel that topic gathering has started
             client.chat_postMessage(
                 channel=command["channel_id"],
-                text=f"📢 *Topic gathering has started!* 📢\nSend your topics via DM to <@{command['bot_id']}> in the next {duration} minutes."
+                text=f"📢 *Topic gathering has started!* 📢\nUse `/forum suggest your topic here` to submit topics in the next {duration} minutes."
             )
             
         elif command_text == "stop":
@@ -51,8 +52,26 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
             else:
                 respond("No active topic gathering session.")
                 
+        elif command_text.startswith("suggest "):
+            if not store.is_active():
+                respond("Topic gathering is not currently active. Ask an admin to start a topic gathering session first.")
+                return
+                
+            # Get the text after "suggest "
+            topic_text = command_text[8:].strip()
+            if not topic_text:
+                respond("Please provide a topic to suggest.")
+                return
+                
+            # Store the topic suggestion
+            user_id = command.get("user_id")
+            store.add_message(user_id, topic_text)
+            
+            # Provide feedback (visible only to the command issuer)
+            respond(f"Thank you! Your topic has been recorded: '{topic_text}'")
+                
         else:
-            respond("Unknown command. Available commands: `/forum start [minutes]`, `/forum stop`, `/forum status`")
+            respond("Unknown command. Available commands:\n• `/forum start [minutes]` - Start topic gathering\n• `/forum stop` - End topic gathering\n• `/forum status` - Check status\n• `/forum suggest your topic here` - Submit a topic")
             
     except Exception as e:
         logger.error(f"Error processing forum command: {e}")
