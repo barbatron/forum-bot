@@ -1,5 +1,6 @@
 import re
 import datetime
+import threading
 from logging import Logger
 
 from slack_bolt import Ack, Respond
@@ -26,6 +27,31 @@ def announce_forum_results(client: WebClient, channel_id: str, topics: list):
     client.chat_postMessage(
         channel=channel_id, text=f"📝 *Topic gathering has ended* 📝\n\n*Collected Topics:*\n{formatted_topics}"
     )
+
+
+def handle_expiry(client: WebClient, logger: Logger):
+    """Handle expiry of topic gathering session."""
+    store = TopicGatheringStore.get_instance()
+    expiry_result = store.check_expiry()
+
+    if expiry_result:
+        count, channel_id, messages = expiry_result
+        if channel_id:
+            announce_forum_results(client, channel_id, messages)
+            logger.info(f"Forum automatically ended due to time expiry. Collected {count} topics.")
+
+
+def schedule_expiry(duration_minutes: int, client: WebClient, logger: Logger):
+    """Schedule a timer to check for expiry after the specified duration."""
+    # Schedule the expiry check to run after the duration
+    seconds = duration_minutes * 60
+    timer = threading.Timer(seconds, handle_expiry, args=[client, logger])
+    timer.daemon = True  # Allow the timer thread to exit when the main program exits
+    timer.start()
+
+    # Store the timer reference so it can be canceled if needed
+    store = TopicGatheringStore.get_instance()
+    store.current_timer = timer
 
 
 def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClient, logger: Logger):
@@ -58,6 +84,9 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
             channel_id = command.get("channel_id")
             end_time = store.start_gathering(duration, channel_id)
 
+            # Schedule the expiry timer
+            schedule_expiry(duration, client, logger)
+
             respond(
                 f"Topic gathering has started! I'll collect topics for {duration} minutes (until {end_time.strftime('%H:%M:%S')}). Use `/forum suggest your topic here` to submit topics."
             )
@@ -72,6 +101,11 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
             if not store.is_active():
                 respond("Topic gathering is not currently active.")
                 return
+
+            # Cancel any scheduled timer
+            if hasattr(store, "current_timer") and store.current_timer:
+                store.current_timer.cancel()
+                store.current_timer = None
 
             count, channel_id, messages = store.stop_gathering()
             respond(f"Topic gathering has ended. Collected {count} topics.")

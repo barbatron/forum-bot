@@ -26,6 +26,7 @@ class TopicGatheringStore:
         self.end_time = None
         self.channel_id = None  # Store the channel where the forum was started
         self.messages: List[TopicMessage] = []
+        self.current_timer = None  # Store reference to the active timer
         # Map from user_id to their conversation ID with the bot
         self.user_conversations: Dict[str, str] = {}
 
@@ -44,6 +45,12 @@ class TopicGatheringStore:
         self.channel_id = None
         stored_messages = self.messages.copy()
         self.end_time = None
+
+        # Cancel any existing timer
+        if self.current_timer:
+            self.current_timer.cancel()
+            self.current_timer = None
+
         return len(self.messages), stored_channel, stored_messages
 
     def add_message(self, user_id: str, text: str):
