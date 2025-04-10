@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Any
 from collections import defaultdict
 
 
@@ -37,6 +37,10 @@ class TopicGatheringStore:
         self.current_voting_timer = None
         self.user_votes: Dict[str, Set[int]] = defaultdict(set)  # User ID -> set of topic indices they voted for
 
+        # Calendar event state
+        self.events_created = False
+        self.calendar_events: List[Dict[str, Any]] = []
+
         # Misc
         self.user_conversations: Dict[str, str] = {}
 
@@ -49,6 +53,8 @@ class TopicGatheringStore:
         self.channel_id = channel_id
         self.messages = []
         self.user_votes = defaultdict(set)
+        self.events_created = False
+        self.calendar_events = []
         self.voting_duration_minutes = voting_duration_minutes
         return self.end_time
 
@@ -154,6 +160,30 @@ class TopicGatheringStore:
             return 0
 
         return self.messages[topic_index].votes
+
+    def get_users_by_topic_vote(self) -> Dict[int, List[str]]:
+        """
+        Get a mapping of topic index to users who voted for it
+
+        Returns:
+            Dict mapping topic index to list of user IDs
+        """
+        topic_to_users = defaultdict(list)
+
+        for user_id, topic_indices in self.user_votes.items():
+            for topic_idx in topic_indices:
+                topic_to_users[topic_idx].append(user_id)
+
+        return topic_to_users
+
+    def store_calendar_events(self, events: List[Dict[str, Any]]):
+        """Store created calendar events"""
+        self.calendar_events = events
+        self.events_created = True
+
+    def get_calendar_events(self) -> List[Dict[str, Any]]:
+        """Get stored calendar events"""
+        return self.calendar_events
 
     def get_sorted_topics(self) -> List[TopicMessage]:
         """Get topics sorted by votes (descending)."""

@@ -1,0 +1,29 @@
+{
+  "slots": [
+    {
+      "day_of_week": "Monday",
+      "start_time": "10:00",
+      "end_time": "11:00"
+    },
+    {
+      "day_of_week": "Tuesday",
+      "start_time": "14:00",
+      "end_time": "15:00"
+    },
+    {
+      "day_of_week": "Wednesday",
+      "start_time": "11:00",
+      "end_time": "12:00"
+    },
+    {
+      "day_of_week": "Thursday",
+      "start_time": "15:00",
+      "end_time": "16:00"
+    },
+    {
+      "day_of_week": "Friday",
+      "start_time": "13:00",
+      "end_time": "14:00"
+    }
+  ]
+}

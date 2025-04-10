@@ -7,6 +7,7 @@ from slack_bolt import Ack, Respond
 from slack_sdk import WebClient
 
 from listeners.data_store import TopicGatheringStore
+from integrations.calendar_handler import CalendarEventHandler
 
 
 def announce_forum_results(client: WebClient, channel_id: str, topics: list):
@@ -55,6 +56,36 @@ def announce_voting_results(client: WebClient, channel_id: str, store: TopicGath
     )
 
 
+def create_calendar_events(client: WebClient, channel_id: str, store: TopicGatheringStore, logger: Logger):
+    """Create calendar events for winning topics and announce them."""
+    # If we've already created events for this session, don't do it again
+    if store.events_created:
+        return
+
+    try:
+        # Create calendar handler
+        calendar_handler = CalendarEventHandler()
+
+        # Create events for winning topics
+        events = calendar_handler.create_events_for_winning_topics(topics=store.messages, votes_by_user=store.user_votes)
+
+        # Store the created events
+        store.store_calendar_events(events)
+
+        # Announce each event in Slack
+        for event in events:
+            event_message = calendar_handler.format_event_announcement(event)
+            client.chat_postMessage(channel=channel_id, text=event_message)
+
+        if not events:
+            logger.warning("No calendar events were created")
+        else:
+            logger.info(f"Created {len(events)} calendar events for winning topics")
+
+    except Exception as e:
+        logger.error(f"Failed to create calendar events: {str(e)}")
+
+
 def handle_expiry(client: WebClient, logger: Logger):
     """Handle expiry of topic gathering session and start voting period."""
     store = TopicGatheringStore.get_instance()
@@ -89,6 +120,9 @@ def handle_voting_expiry(client: WebClient, logger: Logger):
             # Announce voting results
             announce_voting_results(client, channel_id, store)
             logger.info("Voting period automatically ended due to time expiry.")
+
+            # Create calendar events for the winning topics
+            create_calendar_events(client, channel_id, store, logger)
 
 
 def schedule_expiry(duration_minutes: int, client: WebClient, logger: Logger):
@@ -141,10 +175,13 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
         # Also check if a voting period has expired
         voting_expiry_result = store.check_voting_expiry()
         if voting_expiry_result:
-            channel_id, _ = voting_expiry_result
+            channel_id, messages = voting_expiry_result
             if channel_id:
                 announce_voting_results(client, channel_id, store)
                 logger.info("Voting period automatically ended due to time expiry.")
+
+                # Create calendar events for the winning topics
+                create_calendar_events(client, channel_id, store, logger)
 
         # Handle start command with optional parameters for topic gathering and voting durations
         start_match = re.match(r"start(?:\s+(\d+))?(?:\s+(\d+))?", command_text)
@@ -198,12 +235,15 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
                         schedule_voting_expiry(voting_duration, client, logger)
 
             elif store.is_voting_active():
-                channel_id, _ = store.stop_voting()
+                channel_id, messages = store.stop_voting()
                 respond("Voting period has ended.")
 
                 # Announce the voting results in the channel
                 if channel_id:
                     announce_voting_results(client, channel_id, store)
+
+                    # Create calendar events for the winning topics
+                    create_calendar_events(client, channel_id, store, logger)
 
             else:
                 respond("No active topic gathering or voting session.")
