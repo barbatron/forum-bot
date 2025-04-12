@@ -6,7 +6,9 @@ from slack_sdk import WebClient
 from listeners.data_store import TopicGatheringStore
 
 
-def direct_message_callback(context: BoltContext, say: Say, client: WebClient, message: dict, logger: Logger):
+def direct_message_callback(
+    context: BoltContext, say: Say, client: WebClient, message: dict, logger: Logger
+):
     try:
         store = TopicGatheringStore.get_instance()
 

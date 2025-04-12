@@ -23,11 +23,17 @@ class MSGraphAPI:
     def _get_access_token(self) -> str:
         """Get or refresh the access token for the Microsoft Graph API"""
         # Check if token is valid
-        if self.access_token and self.token_expiration and self.token_expiration > datetime.datetime.now():
+        if (
+            self.access_token
+            and self.token_expiration
+            and self.token_expiration > datetime.datetime.now()
+        ):
             return self.access_token
 
         # Get new token
-        token_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
+        token_url = (
+            f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
+        )
 
         token_data = {
             "grant_type": "client_credentials",
@@ -45,12 +51,19 @@ class MSGraphAPI:
 
         self.access_token = response_data["access_token"]
         # Set token expiration (subtract 5 minutes as a safety margin)
-        self.token_expiration = datetime.datetime.now() + datetime.timedelta(seconds=response_data["expires_in"] - 300)
+        self.token_expiration = datetime.datetime.now() + datetime.timedelta(
+            seconds=response_data["expires_in"] - 300
+        )
 
         return self.access_token
 
     def create_calendar_event(
-        self, subject: str, body: str, start_time: datetime.datetime, end_time: datetime.datetime, attendees: List[str]
+        self,
+        subject: str,
+        body: str,
+        start_time: datetime.datetime,
+        end_time: datetime.datetime,
+        attendees: List[str],
     ) -> Optional[Dict[str, Any]]:
         """
         Create a calendar event using Microsoft Graph API
@@ -71,10 +84,19 @@ class MSGraphAPI:
         event_data = {
             "subject": subject,
             "body": {"contentType": "HTML", "content": body},
-            "start": {"dateTime": start_time.isoformat(), "timeZone": "UTC"},  # You may want to make this configurable
-            "end": {"dateTime": end_time.isoformat(), "timeZone": "UTC"},  # You may want to make this configurable
+            "start": {
+                "dateTime": start_time.isoformat(),
+                "timeZone": "UTC",
+            },  # You may want to make this configurable
+            "end": {
+                "dateTime": end_time.isoformat(),
+                "timeZone": "UTC",
+            },  # You may want to make this configurable
             "attendees": [
-                {"emailAddress": {"address": email, "name": ""}, "type": "required"}  # Graph API will resolve names
+                {
+                    "emailAddress": {"address": email, "name": ""},
+                    "type": "required",
+                }  # Graph API will resolve names
                 for email in attendees
             ],
         }
@@ -83,7 +105,10 @@ class MSGraphAPI:
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events"
 
         # Headers
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.post(url, headers=headers, data=json.dumps(event_data))
@@ -91,7 +116,9 @@ class MSGraphAPI:
             if response.status_code >= 200 and response.status_code < 300:
                 return response.json()
             else:
-                logger.error(f"Failed to create event: {response.status_code} - {response.text}")
+                logger.error(
+                    f"Failed to create event: {response.status_code} - {response.text}"
+                )
                 return None
 
         except Exception as e:
@@ -112,7 +139,10 @@ class MSGraphAPI:
 
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_id}"
 
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.get(url, headers=headers)
@@ -121,7 +151,9 @@ class MSGraphAPI:
                 data = response.json()
                 return data.get("webLink", "")
             else:
-                logger.error(f"Failed to get event link: {response.status_code} - {response.text}")
+                logger.error(
+                    f"Failed to get event link: {response.status_code} - {response.text}"
+                )
                 return ""
 
         except Exception as e:

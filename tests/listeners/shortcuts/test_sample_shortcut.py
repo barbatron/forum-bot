@@ -18,7 +18,12 @@ class TestSampleShortcut:
         self.fake_client.views_open = Mock(WebClient.views_open)
 
     def test_sample_shortcut_callback(self):
-        sample_shortcut_callback(body=self.fake_body, ack=self.fake_ack, client=self.fake_client, logger=test_logger)
+        sample_shortcut_callback(
+            body=self.fake_body,
+            ack=self.fake_ack,
+            client=self.fake_client,
+            logger=test_logger,
+        )
 
         self.fake_ack.assert_called_once()
 
@@ -29,7 +34,12 @@ class TestSampleShortcut:
 
     def test_ack_exception(self, caplog):
         self.fake_ack.side_effect = Exception("test exception")
-        sample_shortcut_callback(body=self.fake_body, ack=self.fake_ack, client=self.fake_client, logger=test_logger)
+        sample_shortcut_callback(
+            body=self.fake_body,
+            ack=self.fake_ack,
+            client=self.fake_client,
+            logger=test_logger,
+        )
 
         self.fake_client.views_open.assert_not_called()
         self.fake_ack.assert_called_once()

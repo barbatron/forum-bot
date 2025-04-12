@@ -52,7 +52,9 @@ class TimeSlotManager:
         # For simple implementation, just return a random slot
         return random.choice(self.slots)
 
-    def get_datetime_for_slot(self, slot: Dict) -> Tuple[datetime.datetime, datetime.datetime]:
+    def get_datetime_for_slot(
+        self, slot: Dict
+    ) -> Tuple[datetime.datetime, datetime.datetime]:
         """
         Convert a slot to actual start and end datetime objects
 
@@ -66,7 +68,15 @@ class TimeSlotManager:
         today = datetime.datetime.now().date()
 
         # Map day names to weekday numbers (0=Monday, 6=Sunday)
-        day_mapping = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
+        day_mapping = {
+            "Monday": 0,
+            "Tuesday": 1,
+            "Wednesday": 2,
+            "Thursday": 3,
+            "Friday": 4,
+            "Saturday": 5,
+            "Sunday": 6,
+        }
 
         target_day = day_mapping.get(slot["day_of_week"])
         if target_day is None:
@@ -86,8 +96,12 @@ class TimeSlotManager:
         end_hour, end_minute = self._parse_time(slot["end_time"])
 
         # Create datetime objects
-        start_datetime = datetime.datetime(event_date.year, event_date.month, event_date.day, start_hour, start_minute)
+        start_datetime = datetime.datetime(
+            event_date.year, event_date.month, event_date.day, start_hour, start_minute
+        )
 
-        end_datetime = datetime.datetime(event_date.year, event_date.month, event_date.day, end_hour, end_minute)
+        end_datetime = datetime.datetime(
+            event_date.year, event_date.month, event_date.day, end_hour, end_minute
+        )
 
         return start_datetime, end_datetime

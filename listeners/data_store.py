@@ -35,7 +35,9 @@ class TopicGatheringStore:
         self.voting_active = False
         self.voting_end_time = None
         self.current_voting_timer = None
-        self.user_votes: Dict[str, Set[int]] = defaultdict(set)  # User ID -> set of topic indices they voted for
+        self.user_votes: Dict[str, Set[int]] = defaultdict(
+            set
+        )  # User ID -> set of topic indices they voted for
 
         # Calendar event state
         self.events_created = False
@@ -45,11 +47,18 @@ class TopicGatheringStore:
         self.user_conversations: Dict[str, str] = {}
 
     # Topic gathering methods
-    def start_gathering(self, duration_minutes: int = 30, voting_duration_minutes: int = 15, channel_id: str = None):
+    def start_gathering(
+        self,
+        duration_minutes: int = 30,
+        voting_duration_minutes: int = 15,
+        channel_id: str = None,
+    ):
         """Start a topic gathering session for the specified duration."""
         self.active = True
         self.voting_active = False
-        self.end_time = datetime.datetime.now() + datetime.timedelta(minutes=duration_minutes)
+        self.end_time = datetime.datetime.now() + datetime.timedelta(
+            minutes=duration_minutes
+        )
         self.channel_id = channel_id
         self.messages = []
         self.user_votes = defaultdict(set)
@@ -107,7 +116,9 @@ class TopicGatheringStore:
     def start_voting(self, duration_minutes: int = 15):
         """Start a voting period."""
         self.voting_active = True
-        self.voting_end_time = datetime.datetime.now() + datetime.timedelta(minutes=duration_minutes)
+        self.voting_end_time = datetime.datetime.now() + datetime.timedelta(
+            minutes=duration_minutes
+        )
         return self.voting_end_time
 
     def stop_voting(self):
@@ -137,7 +148,11 @@ class TopicGatheringStore:
 
     def check_voting_expiry(self) -> Optional[tuple]:
         """Check if voting has expired and return data for announcement."""
-        if self.voting_active and self.voting_end_time and datetime.datetime.now() > self.voting_end_time:
+        if (
+            self.voting_active
+            and self.voting_end_time
+            and datetime.datetime.now() > self.voting_end_time
+        ):
             channel, messages = self.stop_voting()
             return channel, messages
         return None

@@ -18,7 +18,9 @@ class TestSampleView:
             "state": {
                 "values": {
                     "input_block_id": {"sample_input_id": {"value": "test value"}},
-                    "select_channel_block_id": {"sample_dropdown_id": {"selected_conversation": "C1234"}},
+                    "select_channel_block_id": {
+                        "sample_dropdown_id": {"selected_conversation": "C1234"}
+                    },
                 }
             }
         }
@@ -40,9 +42,16 @@ class TestSampleView:
         kwargs = self.fake_client.chat_postMessage.call_args.kwargs
         assert (
             kwargs["channel"]
-            == self.fake_view["state"]["values"]["select_channel_block_id"]["sample_dropdown_id"]["selected_conversation"]
+            == self.fake_view["state"]["values"]["select_channel_block_id"][
+                "sample_dropdown_id"
+            ]["selected_conversation"]
         )
-        assert self.fake_view["state"]["values"]["input_block_id"]["sample_input_id"]["value"] in kwargs["text"]
+        assert (
+            self.fake_view["state"]["values"]["input_block_id"]["sample_input_id"][
+                "value"
+            ]
+            in kwargs["text"]
+        )
         assert self.fake_body["user"]["id"] in kwargs["text"]
 
     def test_ack_exception(self, caplog):

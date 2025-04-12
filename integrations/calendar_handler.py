@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from integrations.ms_graph import MSGraphAPI
 from integrations.time_slots import TimeSlotManager
@@ -17,7 +17,9 @@ class CalendarEventHandler:
         self.slot_manager = TimeSlotManager()
         # Get top N topics to schedule from environment variable
         self.top_topics_count = int(os.environ.get("TOP_TOPICS_COUNT", "3"))
-        self.event_duration_minutes = int(os.environ.get("EVENT_DURATION_MINUTES", "60"))
+        self.event_duration_minutes = int(
+            os.environ.get("EVENT_DURATION_MINUTES", "60")
+        )
 
     def get_user_email(self, user_id: str) -> str:
         """
@@ -55,14 +57,20 @@ class CalendarEventHandler:
         for topic in top_topics:
             # Create reverse mapping from topic index to users who voted for it
             topic_index = topics.index(topic)
-            attendee_user_ids = [user_id for user_id, voted_indices in votes_by_user.items() if topic_index in voted_indices]
+            attendee_user_ids = [
+                user_id
+                for user_id, voted_indices in votes_by_user.items()
+                if topic_index in voted_indices
+            ]
 
             # Add the topic creator as an attendee
             if topic.user_id not in attendee_user_ids:
                 attendee_user_ids.append(topic.user_id)
 
             # Get email addresses for attendees
-            attendee_emails = [self.get_user_email(user_id) for user_id in attendee_user_ids]
+            attendee_emails = [
+                self.get_user_email(user_id) for user_id in attendee_user_ids
+            ]
 
             # Get next available time slot
             slot = self.slot_manager.get_next_slot()
@@ -75,7 +83,9 @@ class CalendarEventHandler:
                 start_time, end_time = self.slot_manager.get_datetime_for_slot(slot)
 
                 # Create event subject and body
-                subject = f"Forum topic: {topic.text[:50]}" + ("..." if len(topic.text) > 50 else "")
+                subject = f"Forum topic: {topic.text[:50]}" + (
+                    "..." if len(topic.text) > 50 else ""
+                )
                 body = f"""
                 <h3>Forum Topic Discussion</h3>
                 <p><strong>Topic:</strong> {topic.text}</p>
@@ -85,7 +95,11 @@ class CalendarEventHandler:
 
                 # Create the event
                 event_result = self.graph_api.create_calendar_event(
-                    subject=subject, body=body, start_time=start_time, end_time=end_time, attendees=attendee_emails
+                    subject=subject,
+                    body=body,
+                    start_time=start_time,
+                    end_time=end_time,
+                    attendees=attendee_emails,
                 )
 
                 if event_result:
@@ -95,7 +109,9 @@ class CalendarEventHandler:
                             "topic": topic,
                             "event_id": event_result.get("id"),
                             "event_link": event_result.get("webLink")
-                            or self.graph_api.get_event_link(event_result.get("id", "")),
+                            or self.graph_api.get_event_link(
+                                event_result.get("id", "")
+                            ),
                             "start_time": start_time,
                             "end_time": end_time,
                             "day": slot["day_of_week"],
@@ -128,7 +144,10 @@ class CalendarEventHandler:
         attendee_mentions = [f"<@{uid}>" for uid in attendees]
         if len(attendee_mentions) > 5:
             # If many attendees, truncate the list
-            attendee_text = ", ".join(attendee_mentions[:5]) + f" and {len(attendee_mentions) - 5} others"
+            attendee_text = (
+                ", ".join(attendee_mentions[:5])
+                + f" and {len(attendee_mentions) - 5} others"
+            )
         else:
             attendee_text = ", ".join(attendee_mentions)
 

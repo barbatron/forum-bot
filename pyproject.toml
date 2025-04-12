@@ -1,6 +1,3 @@
-[tool.black]
-line-length = 125
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 log_file = "logs/pytest.log"

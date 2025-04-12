@@ -14,7 +14,8 @@ def announce_forum_results(client: WebClient, channel_id: str, topics: list):
     """Announce forum results to the channel."""
     if not topics:
         client.chat_postMessage(
-            channel=channel_id, text="📝 *Topic gathering has ended* 📝\nNo topics were collected during this session."
+            channel=channel_id,
+            text="📝 *Topic gathering has ended* 📝\nNo topics were collected during this session.",
         )
         return
 
@@ -26,12 +27,17 @@ def announce_forum_results(client: WebClient, channel_id: str, topics: list):
     formatted_topics = "\n".join(topics_text)
 
     client.chat_postMessage(
-        channel=channel_id, text=f"📝 *Topic gathering has ended* 📝\n\n*Collected Topics:*\n{formatted_topics}"
+        channel=channel_id,
+        text=f"📝 *Topic gathering has ended* 📝\n\n*Collected Topics:*\n{formatted_topics}",
     )
 
 
 def announce_voting_start(
-    client: WebClient, channel_id: str, store: TopicGatheringStore, voting_duration: int, end_time: datetime.datetime
+    client: WebClient,
+    channel_id: str,
+    store: TopicGatheringStore,
+    voting_duration: int,
+    end_time: datetime.datetime,
 ):
     """Announce the start of voting period."""
     topics_text = store.format_topics_for_voting()
@@ -47,16 +53,21 @@ def announce_voting_start(
     )
 
 
-def announce_voting_results(client: WebClient, channel_id: str, store: TopicGatheringStore):
+def announce_voting_results(
+    client: WebClient, channel_id: str, store: TopicGatheringStore
+):
     """Announce the results of voting."""
     results_text = store.format_voting_results()
 
     client.chat_postMessage(
-        channel=channel_id, text=f"🏆 *Voting Results* 🏆\n\nHere are the final results, sorted by votes:\n\n{results_text}"
+        channel=channel_id,
+        text=f"🏆 *Voting Results* 🏆\n\nHere are the final results, sorted by votes:\n\n{results_text}",
     )
 
 
-def create_calendar_events(client: WebClient, channel_id: str, store: TopicGatheringStore, logger: Logger):
+def create_calendar_events(
+    client: WebClient, channel_id: str, store: TopicGatheringStore, logger: Logger
+):
     """Create calendar events for winning topics and announce them."""
     # If we've already created events for this session, don't do it again
     if store.events_created:
@@ -67,7 +78,9 @@ def create_calendar_events(client: WebClient, channel_id: str, store: TopicGathe
         calendar_handler = CalendarEventHandler()
 
         # Create events for winning topics
-        events = calendar_handler.create_events_for_winning_topics(topics=store.messages, votes_by_user=store.user_votes)
+        events = calendar_handler.create_events_for_winning_topics(
+            topics=store.messages, votes_by_user=store.user_votes
+        )
 
         # Store the created events
         store.store_calendar_events(events)
@@ -96,13 +109,17 @@ def handle_expiry(client: WebClient, logger: Logger):
         if channel_id and messages:
             # Announce topic gathering ended
             announce_forum_results(client, channel_id, messages)
-            logger.info(f"Forum automatically ended due to time expiry. Collected {count} topics.")
+            logger.info(
+                f"Forum automatically ended due to time expiry. Collected {count} topics."
+            )
 
             # Start voting period if we have topics and a configured voting duration
             if messages and hasattr(store, "voting_duration_minutes"):
                 voting_duration = store.voting_duration_minutes
                 end_time = store.start_voting(voting_duration)
-                announce_voting_start(client, channel_id, store, voting_duration, end_time)
+                announce_voting_start(
+                    client, channel_id, store, voting_duration, end_time
+                )
                 logger.info(f"Voting period started for {voting_duration} minutes.")
 
                 # Schedule the end of voting period
@@ -147,7 +164,9 @@ def schedule_voting_expiry(duration_minutes: int, client: WebClient, logger: Log
     store.current_voting_timer = timer
 
 
-def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClient, logger: Logger):
+def forum_command_callback(
+    command, ack: Ack, respond: Respond, client: WebClient, logger: Logger
+):
     try:
         ack()
 
@@ -160,13 +179,17 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
             count, channel_id, messages = expiry_result
             if channel_id and messages:
                 announce_forum_results(client, channel_id, messages)
-                logger.info(f"Forum automatically ended due to time expiry. Collected {count} topics.")
+                logger.info(
+                    f"Forum automatically ended due to time expiry. Collected {count} topics."
+                )
 
                 # Start voting period if we have topics and a configured voting duration
                 if messages and hasattr(store, "voting_duration_minutes"):
                     voting_duration = store.voting_duration_minutes
                     end_time = store.start_voting(voting_duration)
-                    announce_voting_start(client, channel_id, store, voting_duration, end_time)
+                    announce_voting_start(
+                        client, channel_id, store, voting_duration, end_time
+                    )
                     logger.info(f"Voting period started for {voting_duration} minutes.")
 
                     # Schedule the end of voting period
@@ -187,7 +210,9 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
         start_match = re.match(r"start(?:\s+(\d+))?(?:\s+(\d+))?", command_text)
         if start_match:
             # Extract durations if provided
-            gathering_duration = int(start_match.group(1)) if start_match.group(1) else 30
+            gathering_duration = (
+                int(start_match.group(1)) if start_match.group(1) else 30
+            )
             voting_duration = int(start_match.group(2)) if start_match.group(2) else 15
 
             # Check if already active
@@ -197,7 +222,9 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
 
             # Start topic gathering and store the channel ID
             channel_id = command.get("channel_id")
-            end_time = store.start_gathering(gathering_duration, voting_duration, channel_id)
+            end_time = store.start_gathering(
+                gathering_duration, voting_duration, channel_id
+            )
 
             # Schedule the expiry timer
             schedule_expiry(gathering_duration, client, logger)
@@ -229,9 +256,15 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
 
                     # Start voting period if we have topics
                     if messages:
-                        voting_duration = store.voting_duration_minutes if hasattr(store, "voting_duration_minutes") else 15
+                        voting_duration = (
+                            store.voting_duration_minutes
+                            if hasattr(store, "voting_duration_minutes")
+                            else 15
+                        )
                         end_time = store.start_voting(voting_duration)
-                        announce_voting_start(client, channel_id, store, voting_duration, end_time)
+                        announce_voting_start(
+                            client, channel_id, store, voting_duration, end_time
+                        )
                         schedule_voting_expiry(voting_duration, client, logger)
 
             elif store.is_voting_active():
@@ -276,14 +309,20 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
                 count, channel_id, messages = expiry_result
                 if channel_id:
                     announce_forum_results(client, channel_id, messages)
-                    logger.info(f"Forum automatically ended due to time expiry. Collected {count} topics.")
+                    logger.info(
+                        f"Forum automatically ended due to time expiry. Collected {count} topics."
+                    )
 
                     # Start voting period if we have topics
                     if messages and hasattr(store, "voting_duration_minutes"):
                         voting_duration = store.voting_duration_minutes
                         end_time = store.start_voting(voting_duration)
-                        announce_voting_start(client, channel_id, store, voting_duration, end_time)
-                        logger.info(f"Voting period started for {voting_duration} minutes.")
+                        announce_voting_start(
+                            client, channel_id, store, voting_duration, end_time
+                        )
+                        logger.info(
+                            f"Voting period started for {voting_duration} minutes."
+                        )
                         schedule_voting_expiry(voting_duration, client, logger)
 
                 respond(
@@ -292,7 +331,9 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
                 return
 
             if not store.is_active():
-                respond("Topic gathering is not currently active. Ask an admin to start a topic gathering session first.")
+                respond(
+                    "Topic gathering is not currently active. Ask an admin to start a topic gathering session first."
+                )
                 return
 
             # Get the text after "suggest "
@@ -319,7 +360,9 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
                 topic_idx = topic_num - 1  # Convert to 0-based index
 
                 if topic_idx < 0 or topic_idx >= len(store.messages):
-                    respond(f"Invalid topic number. Please use a number between 1 and {len(store.messages)}.")
+                    respond(
+                        f"Invalid topic number. Please use a number between 1 and {len(store.messages)}."
+                    )
                     return
 
                 # Record the vote
@@ -334,7 +377,9 @@ def forum_command_callback(command, ack: Ack, respond: Respond, client: WebClien
                 )
 
             except ValueError:
-                respond("Please provide a valid topic number to vote for. Example: `/forum vote 3`")
+                respond(
+                    "Please provide a valid topic number to vote for. Example: `/forum vote 3`"
+                )
 
         else:
             respond(
