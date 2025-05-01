@@ -15,7 +15,7 @@ pycodestyle==2.13.0
 pyflakes==3.3.2
 pytest==8.3.5
 python-dotenv==1.0.0
-requests==2.31.0
+requests==2.32.3
 ruff==0.11.5
 slack_bolt==1.23.0
 slack_sdk==3.35.0
